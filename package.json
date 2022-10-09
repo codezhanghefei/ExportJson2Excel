@@ -2,9 +2,10 @@
   "name": "@code-zhf/export-json-2-excel",
   "version": "1.0.0",
   "description": "export arrayJson to excel",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -19,5 +20,8 @@
   "dependencies": {
     "file-saver": "^2.0.5",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "rollup": "^2.79.1"
   }
 }
