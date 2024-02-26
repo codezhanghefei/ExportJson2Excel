@@ -75,17 +75,25 @@ function export_json_to_excel({
   header,
   data,
   filename,
+  noteList = [],
   merges = [],
   autoWidth = true,
   bookType = 'xlsx'
 } = {}) {
   /* original data */
-  filename = filename || 'excel-list'
-  data = [...data]
+  filename = filename || "excel-list";
+  data = [...data];
   data.unshift(header);
 
   for (let i = multiHeader.length - 1; i > -1; i--) {
-    data.unshift(multiHeader[i])
+    data.unshift(multiHeader[i]);
+  }
+
+  let dataStart = 0
+  if (noteList.length) {
+    data.unshift([""]);
+    data.unshift(noteList);
+    dataStart = noteList.length + 1
   }
 
   var ws_name = "SheetJS";
@@ -93,42 +101,43 @@ function export_json_to_excel({
     ws = sheet_from_array_of_arrays(data);
 
   if (merges.length > 0) {
-    if (!ws['!merges']) ws['!merges'] = [];
-    merges.forEach(item => {
-      ws['!merges'].push(XLSX.utils.decode_range(item))
-    })
+    if (!ws["!merges"]) ws["!merges"] = [];
+    merges.forEach((item) => {
+      ws["!merges"].push(XLSX.utils.decode_range(item));
+    });
   }
 
   if (autoWidth) {
     /*设置worksheet每列的最大宽度*/
-    const colWidth = data.map(row => row.map(val => {
-      /*先判断是否为null/undefined*/
-      if (val == null) {
-        return {
-          'wch': 10
-        };
-      }
-      /*再判断是否为中文*/
-      else if (val.toString().charCodeAt(0) > 255) {
-        return {
-          'wch': val.toString().length * 2
-        };
-      } else {
-        return {
-          'wch': val.toString().length
-        };
-      }
-    }))
+    const colWidth = data.slice(dataStart).map((row) =>
+      row.map((val) => {
+        /*先判断是否为null/undefined*/
+        if (val == null) {
+          return {
+            wch: 10,
+          };
+        } else if (val.toString().charCodeAt(0) > 255) {
+        /*再判断是否为中文*/
+          return {
+            wch: val.toString().length * 2,
+          };
+        } else {
+          return {
+            wch: val.toString().length,
+          };
+        }
+      })
+    );
     /*以第一行为初始值*/
     let result = colWidth[0];
     for (let i = 1; i < colWidth.length; i++) {
       for (let j = 0; j < colWidth[i].length; j++) {
-        if (result[j]['wch'] < colWidth[i][j]['wch']) {
-          result[j]['wch'] = colWidth[i][j]['wch'];
+        if (result[j]["wch"] < colWidth[i][j]["wch"]) {
+          result[j]["wch"] = colWidth[i][j]["wch"];
         }
       }
     }
-    ws['!cols'] = result;
+    ws["!cols"] = result;
   }
 
   /* add worksheet to workbook */
@@ -138,25 +147,30 @@ function export_json_to_excel({
   var wbout = XLSX.write(wb, {
     bookType: bookType,
     bookSST: false,
-    type: 'binary'
+    type: "binary",
   });
-  saveAs(new Blob([s2ab(wbout)], {
-    type: "application/octet-stream"
-  }), `${filename}.${bookType}`);
+  saveAs(
+    new Blob([s2ab(wbout)], {
+      type: "application/octet-stream",
+    }),
+    `${filename}.${bookType}`
+  );
 }
 
 /**
  * 将数组导出为excel
- * @param {*} fields 要导出的字段 [{ title, dataIndex }]
- * @param {*} data 要导出的数据，是个数组
- * @param {*} filename 导出的文件名称
+ * @param {{title:string,dataIndex:string}[]} fields 要导出的字段 [{ title, dataIndex }]
+ * @param {{dataIndex:any}[]} data 要导出的数据，是个数组
+ * @param {string} filename 导出的文件名称
+ * @param {?string[]} noteList 备注，如有则放在表格开头行 
  */
-export default function exportJson2Excel(fields, data, filename) {
+export default function exportJson2Excel(fields, data, filename,noteList=[]) {
   const exportData = formatJson(fields.map((item) => item.dataIndex), data);
 
   export_json_to_excel({
     header: fields.map((item) => item.title),
     data: exportData,
     filename,
+    noteList:noteList
   })
 }
